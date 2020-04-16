@@ -1,6 +1,5 @@
-package test;
+package main;
 
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import org.apache.commons.math3.complex.Complex;
 
@@ -14,6 +13,9 @@ public class Subtask {
 	int yPixelStart;
 	int yPixelEnd;
 	BufferedImage bufImage;
+	
+	int maxItarations = 50;
+	double escapeRadius = 2000000000;
 	
 	Subtask(double xStart, double xEnd, double yStart, double yEnd,
 			int xPixelStart, int xPixelEnd, int yPixelStart, int yPixelEnd,
@@ -30,7 +32,8 @@ public class Subtask {
 		this.bufImage = bufImage;
 	}
 	
-	int calc(double cRe, double cIm)
+	//  F(Z)=е^Z+C
+	int calcPlus(double cRe, double cIm)
 	{
 		Complex c = new Complex(cRe, cIm);
 		Complex z = c;
@@ -44,21 +47,40 @@ public class Subtask {
 		return steps;
 	}
 	
-	void colorPixel(int x, int y, int steps)
+	int calc(double cRe, double cIm)
 	{
-		if (steps == 2) {
-			bufImage.setRGB(x, y, Color.red.getRGB());
-		} else if (3 <= steps && steps <= 6) {
-			bufImage.setRGB(x, y, Color.orange.getRGB());
-		} else if (7 <= steps && steps <= 12) {
-			bufImage.setRGB(x, y, Color.pink.getRGB());
-		} else if (13 <= steps && steps <= 23) {
-			bufImage.setRGB(x, y, Color.yellow.getRGB());
-		} else if (24 <= steps && steps <= 34) {
-			bufImage.setRGB(x, y, Color.green.getRGB());
-		} else {
-			bufImage.setRGB(x, y, Color.blue.getRGB());
+		Complex z = new Complex(0.0, 0.0);
+		Complex c = new Complex(cRe, cIm);
+		Complex e = new Complex(Math.E, 0);
+		
+		int iterations = 0;
+		
+		while(iterations < maxItarations && z.abs() < escapeRadius) {	
+			z = e.pow(z).subtract(c);
+			iterations++;
 		}
+		
+		return iterations;
+	}
+	
+	void colorPixel(int x, int y, int iterations)
+	{
+		int color = 255 << 24;
+		
+		if(iterations >= maxItarations) {
+			bufImage.setRGB(x, y, color);
+			return;
+		}
+		
+		int red = (int)(255 * ((maxItarations - iterations) / (double)(maxItarations - 1)));
+		int green = (int)(255 * (1 - (Math.abs(maxItarations / 2.0 - iterations) / (maxItarations / 2))));
+		int blue = (int)(255 * ((iterations - 1) / (double)(maxItarations - 1)));
+		
+		color += red << 16;
+		color += green << 8;
+		color += blue;
+		
+		bufImage.setRGB(x, y, color);
 	}
 
 	public void perform()
@@ -77,5 +99,10 @@ public class Subtask {
 				colorPixel(x + xPixelStart, y + yPixelStart, steps);
 			}
 		}	
+	}
+
+	@Override
+	public String toString() {
+		return String.format("[%.2f; %.2f]x[%.2f; %.2f]", xStart, xEnd, yStart, yEnd);
 	}
 }
