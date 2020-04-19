@@ -15,7 +15,7 @@ public class Subtask {
 	BufferedImage bufImage;
 	
 	int maxItarations = 50;
-	double escapeRadius = 2000000000;
+	double escapeRadius = 2000000;
 	
 	Subtask(double xStart, double xEnd, double yStart, double yEnd,
 			int xPixelStart, int xPixelEnd, int yPixelStart, int yPixelEnd,
