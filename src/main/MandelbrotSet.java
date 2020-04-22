@@ -1,12 +1,10 @@
 package main;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,34 +13,37 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 
 public class MandelbrotSet {
+	CMDLineParser cmdLine;
 	String imageName;
 	BufferedImage bufImage;
 	ArrayList<Task> tasks;
-	int tasksCount;
-	int subtasksCountPerTask;
+	short tasksCount;
+	short subtasksCountPerTask;
+	long start;
+	long end;
 	boolean isQuiet;
 
-	public MandelbrotSet(int xPixels, int yPixels,
-			double xStart, double xEnd, double yStart, double yEnd,
-			String imageName, int tasksCount, boolean isQuiet)
+	public MandelbrotSet(String[] args)
 	{
-		this.imageName = imageName;
-		this.tasksCount = tasksCount;
-		this.isQuiet = isQuiet;
+		start = Calendar.getInstance().getTimeInMillis();
+		cmdLine = new CMDLineParser(args);
 		
-		this.subtasksCountPerTask = (tasksCount == 1) ? 1 : 8;
-		initializeImage(xPixels, yPixels);
-
-		tasks = new ArrayList<Task>(tasksCount);
-		createTasks(xPixels, yPixels, xStart, xEnd, yStart, yEnd);
+		initializeFields();
 	}
-
-	void initializeImage(int width, int height)
+	
+	void initializeFields()
 	{
-		bufImage = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-		Graphics2D g2d = bufImage.createGraphics();
-		g2d.setColor(Color.WHITE);
-		g2d.fillRect(0, 0, width, height);
+		this.imageName = cmdLine.getImageName();
+		this.tasksCount = cmdLine.getTasksCount();
+		this.subtasksCountPerTask = (tasksCount == 1) ? 1 : cmdLine.getGranularity();
+		this.isQuiet = cmdLine.isQuiet();
+		
+		bufImage = new BufferedImage(cmdLine.getxPixels(), cmdLine.getyPixels(), BufferedImage.TYPE_3BYTE_BGR);
+		tasks = new ArrayList<Task>(tasksCount);
+		
+		createTasks(cmdLine.getxPixels(), cmdLine.getyPixels(),
+				cmdLine.getxStart(), cmdLine.getxEnd(),
+				cmdLine.getyStart(), cmdLine.getyEnd());
 	}
 
 	void saveImage()
@@ -54,45 +55,43 @@ public class MandelbrotSet {
 		}
 	}
 
-	void createTasks(int width, int height, double a, double b, double c, double d)
+	void createTasks(short width, short height, double a, double b, double c, double d)
 	{
-		int xPixelsWidth = (int) Math.ceil(width / (double)tasksCount);
-		int yPixelsHeight = (int) Math.ceil(height / (double)subtasksCountPerTask);
+		short xPixelsWidth = (short) Math.round(width / (double)tasksCount);
+		short yPixelsHeight = (short) Math.round(height / (double)subtasksCountPerTask);
 		
 		double xWidth = Math.abs(b - a) / tasksCount;
 		double yHeight = Math.abs(d - c) / subtasksCountPerTask;
 				
-		int xPixelStart, xPixelEnd;
-		int yPixelStart, yPixelEnd;
+		short xPixelStart, xPixelEnd;
+		short yPixelStart, yPixelEnd;
 		
 		double xStart, xEnd;
 		double yStart, yEnd;
 		
 		LinkedList<Subtask> subtasks = new LinkedList<Subtask>();
-		
-		
 			
-		for(int i = 0; i < tasksCount; i++) {
-			xPixelStart = i * xPixelsWidth;
+		for(short i = 0; i < tasksCount; i++) {
+			xPixelStart = (short) (i * xPixelsWidth);
 			xStart = a + i * xWidth;
 
 			if(i == tasksCount - 1) {
-				xPixelEnd = width - 1;
+				xPixelEnd = (short) (width - 1);
 				xEnd = b;
 			} else {
-				xPixelEnd = (i+1) * xPixelsWidth - 1;
+				xPixelEnd = (short) ((i+1) * xPixelsWidth - 1);
 				xEnd = a + (i+1) * xWidth;
 			}
 
-			for(int j = 0; j < subtasksCountPerTask; j++) {
-				yPixelStart = j * yPixelsHeight;
+			for(short j = 0; j < subtasksCountPerTask; j++) {
+				yPixelStart = (short) (j * yPixelsHeight);
 				yStart = c + j * yHeight;
 
 				if(j == subtasksCountPerTask - 1) {
-					yPixelEnd = height - 1;
+					yPixelEnd = (short) (height - 1);
 					yEnd = d;
 				} else {
-					yPixelEnd = (j + 1) * yPixelsHeight - 1;
+					yPixelEnd = (short) ((j + 1) * yPixelsHeight - 1);
 					yEnd = c + (j + 1) * yHeight;
 				}
 				subtasks.add(
@@ -112,13 +111,13 @@ public class MandelbrotSet {
 	void dealSubtasks(LinkedList<Subtask> subtasks)
 	{
 	
-		for(int i = 1; i <= tasksCount; i++) {
+		for(short i = 1; i <= tasksCount; i++) {
 			tasks.add(new Task("Thread " + Integer.toString(i), isQuiet));
 		}
 		
 		int current = 0;
 		@SuppressWarnings("unused")
-		int i = 1;
+		short i = 1;
 		while(!subtasks.isEmpty()) {
 			// uncomment to see where each task is dealt
 			//System.out.printf("Subtask(%d): %s goes to thread %d%n",
@@ -132,9 +131,7 @@ public class MandelbrotSet {
 	public void generate()
 	{
 		ExecutorService pool = Executors.newFixedThreadPool(tasksCount);
-		Date start = new Date();
-		Date end;
-		
+			
 		tasks.forEach(
 				task -> pool.execute(task)
 				);
@@ -147,12 +144,10 @@ public class MandelbrotSet {
 		}
 
 		saveImage();
-		
-		end = new Date();
-		long runDuration = end.getTime() - start.getTime();
-		
+			
 		if(isQuiet == false) {
-			System.out.printf("%nTotal execution time for current run: %d ms%n", runDuration);
+			end = Calendar.getInstance().getTimeInMillis();
+			System.out.printf("%nTotal execution time for current run: %d ms%n", end - start);
 		}
 	}
 }

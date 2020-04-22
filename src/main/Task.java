@@ -1,14 +1,13 @@
 package main;
 
-import java.util.Date;
+import java.util.Calendar;
 import java.util.LinkedList;
 
 public class Task implements Runnable{
 	LinkedList<Subtask> subtasks;
 	String taskName;
-	Date start;
-	Date end;
-	long duration;
+	long start;
+	long end;
 	boolean isQuiet;
 	
 	Task(String taskName, boolean isQuiet)
@@ -20,19 +19,17 @@ public class Task implements Runnable{
 
 	@Override
 	public void run() {
-		start = new Date();
-		
 		if(isQuiet == false) {
+			start = Calendar.getInstance().getTimeInMillis();
 			System.out.printf("%s started%n", taskName);
 		}
 		
 		subtasks.forEach(subtask -> subtask.perform());
-		end = new Date();
 		
-		duration = end.getTime() - start.getTime();
 		if(isQuiet == false) {
+			end = Calendar.getInstance().getTimeInMillis();
 			System.out.printf("%s finished, execution time: %d ms%n",
-					taskName, duration);
+					taskName, end - start);
 		}
 	}
 	

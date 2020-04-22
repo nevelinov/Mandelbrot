@@ -9,18 +9,20 @@ public class CMDLineParser {
 	final String defaultImageSize = "640x480";
 	final String defaultIntervals = "-2.0:2.0:-1.0:1.0";
 	final short defaultTasksCount = 1;
+	final short defaultGranularity = 2;
 	final String defaultImageName = "zad15.png";
 	final boolean defaultIsQuiet = false;
 	
-	int xPixels;
-	int yPixels;
+	short xPixels;
+	short yPixels;
 	
 	double xStart;
 	double xEnd;
 	double yStart;
 	double yEnd;
 	
-	int tasksCount;
+	short tasksCount;
+	short granularity;
 	
 	String imageName;
 		
@@ -42,6 +44,7 @@ public class CMDLineParser {
 		options.addOption("s", "size", true, "-s or -size");
 		options.addOption("r", "rect", true, "-r or -rect");
 		options.addOption("t", "task", true, "-t or -tasks");
+		options.addOption("g", "granularity", true, "-g or -granularity");
 		options.addOption("o", "output", true, "-o or -output");
 		options.addOption("q", "quiet", false, "-q or -quiet");
 	}
@@ -60,7 +63,11 @@ public class CMDLineParser {
 		parseIntervals();
 		
 		tasksCount = cmdLine.hasOption("t") ?
-				Integer.parseInt(cmdLine.getOptionValue("t")) : defaultTasksCount;
+				Short.parseShort(cmdLine.getOptionValue("t")) : defaultTasksCount;
+		granularity = cmdLine.hasOption("g") ?
+				Short.parseShort(cmdLine.getOptionValue("g")) : defaultGranularity;
+		if(tasksCount == 1) granularity = 1;
+		
 		imageName = cmdLine.getOptionValue("o", defaultImageName);
 		isQuiet = cmdLine.hasOption("q") ? true : defaultIsQuiet;
 	}
@@ -68,8 +75,8 @@ public class CMDLineParser {
 	private void parseImageSize() {	
 		String[] sizes = cmdLine.getOptionValue("s", defaultImageSize).split("x");
 		
-		xPixels = Integer.parseInt(sizes[0]);
-		yPixels = Integer.parseInt(sizes[1]);
+		xPixels = Short.parseShort(sizes[0]);
+		yPixels = Short.parseShort(sizes[1]);
 	}
 	
 	private void parseIntervals() {
@@ -81,11 +88,11 @@ public class CMDLineParser {
 		yEnd = Double.parseDouble(points[3]);
 	}
 
-	public int getxPixels() {
+	public short getxPixels() {
 		return xPixels;
 	}
 
-	public int getyPixels() {
+	public short getyPixels() {
 		return yPixels;
 	}
 
@@ -109,8 +116,12 @@ public class CMDLineParser {
 		return imageName;
 	}
 
-	public int getTasksCount() {
+	public short getTasksCount() {
 		return tasksCount;
+	}
+	
+	public short getGranularity() {
+		return granularity;
 	}
 
 	public boolean isQuiet() {

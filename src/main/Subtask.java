@@ -1,5 +1,6 @@
 package main;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import org.apache.commons.math3.complex.Complex;
 
@@ -8,17 +9,18 @@ public class Subtask {
 	double xEnd;
 	double yStart;
 	double yEnd;
-	int xPixelStart;
-	int xPixelEnd;
-	int yPixelStart;
-	int yPixelEnd;
+	short xPixelStart;
+	short xPixelEnd;
+	short yPixelStart;
+	short yPixelEnd;
 	BufferedImage bufImage;
+	BufferedImage temp;
 	
-	int maxItarations = 50;
+	short maxItarations = 50;
 	double escapeRadius = 2000000;
 	
 	Subtask(double xStart, double xEnd, double yStart, double yEnd,
-			int xPixelStart, int xPixelEnd, int yPixelStart, int yPixelEnd,
+			short xPixelStart, short xPixelEnd, short yPixelStart, short yPixelEnd,
 			BufferedImage bufImage)
 	{
 		this.xStart = xStart;
@@ -30,30 +32,17 @@ public class Subtask {
 		this.yPixelStart = yPixelStart;
 		this.yPixelEnd = yPixelEnd;
 		this.bufImage = bufImage;
+		this.temp = new BufferedImage(xPixelEnd - xPixelStart + 1,
+				yPixelEnd - yPixelStart + 1, BufferedImage.TYPE_3BYTE_BGR);
 	}
 	
-	//  F(Z)=е^Z+C
-	int calcPlus(double cRe, double cIm)
-	{
-		Complex c = new Complex(cRe, cIm);
-		Complex z = c;
-		Complex e = new Complex(Math.E, 0);
-		
-		int steps = 2;
-		while(steps < 100 && z.abs() <= 50) {
-			z = e.pow(z).add(c);
-			steps++;
-		}
-		return steps;
-	}
-	
-	int calc(double cRe, double cIm)
+	short calc(double cRe, double cIm)
 	{
 		Complex z = new Complex(0.0, 0.0);
 		Complex c = new Complex(cRe, cIm);
 		Complex e = new Complex(Math.E, 0);
 		
-		int iterations = 0;
+		short iterations = 0;
 		
 		while(iterations < maxItarations && z.abs() < escapeRadius) {	
 			z = e.pow(z).subtract(c);
@@ -63,12 +52,12 @@ public class Subtask {
 		return iterations;
 	}
 	
-	void colorPixel(int x, int y, int iterations)
+	void colorPixel(short x, short y, short iterations)
 	{
 		int color = 255 << 24;
 		
 		if(iterations >= maxItarations) {
-			bufImage.setRGB(x, y, color);
+			temp.setRGB(x, y, color);
 			return;
 		}
 		
@@ -80,25 +69,29 @@ public class Subtask {
 		color += green << 8;
 		color += blue;
 		
-		bufImage.setRGB(x, y, color);
+		temp.setRGB(x, y, color);
 	}
 
 	public void perform()
 	{
-		int steps;
+		short steps;
 		
-		int pixelWidth = xPixelEnd - xPixelStart + 1;
-		int pixelHeight = yPixelEnd - yPixelStart + 1;
+		short pixelWidth = (short) (xPixelEnd - xPixelStart + 1);
+		short pixelHeight = (short) (yPixelEnd - yPixelStart + 1);
 		
 		double xStep = Math.abs(xEnd - xStart) / pixelWidth;
 		double yStep = Math.abs(yEnd - yStart) / pixelHeight;
 		
-		for(int x = 0; x < pixelWidth; x++) {
-			for(int y = 0; y < pixelHeight; y++) {
+		for(short x = 0; x < pixelWidth; x++) {
+			for(short y = 0; y < pixelHeight; y++) {
 				steps = calc(xStart + x*xStep, yStart + y*yStep);
-				colorPixel(x + xPixelStart, y + yPixelStart, steps);
+				colorPixel(x, y, steps);
 			}
-		}	
+		}
+		
+		Graphics2D g = bufImage.createGraphics();
+		g.drawImage(temp, null, xPixelStart, yPixelStart);
+		g.dispose();
 	}
 
 	@Override
