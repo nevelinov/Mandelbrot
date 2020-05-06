@@ -22,6 +22,7 @@ public class MandelbrotSet {
 	long start;
 	long end;
 	boolean isQuiet;
+	Balancing balancingType;
 
 	public MandelbrotSet(String[] args)
 	{
@@ -37,6 +38,7 @@ public class MandelbrotSet {
 		this.tasksCount = cmdLine.getTasksCount();
 		this.subtasksCountPerTask = (tasksCount == 1) ? 1 : cmdLine.getGranularity();
 		this.isQuiet = cmdLine.isQuiet();
+		this.balancingType = cmdLine.getBalancingType();
 		
 		bufImage = new BufferedImage(cmdLine.getxPixels(), cmdLine.getyPixels(), BufferedImage.TYPE_3BYTE_BGR);
 		tasks = new ArrayList<Task>(tasksCount);
@@ -127,8 +129,46 @@ public class MandelbrotSet {
 			current %= tasksCount;
 		}
 	}
-
+	
 	public void generate()
+	{
+		switch(balancingType) {
+			case STATIC:
+				generateStatic();
+				break;
+			case DYNAMIC:
+				generateDynamic();
+				break;
+			default:
+				System.out.println("Unsupported type of balancing");
+		}
+	}
+	
+	void generateStatic()
+	{
+		tasks.forEach(
+				task -> task.start()
+			);
+		
+		tasks.forEach(
+				task -> {
+					try {
+						task.join(60000);;
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			);
+		
+		saveImage();
+		
+		if(isQuiet == false) {
+			end = Calendar.getInstance().getTimeInMillis();
+			System.out.printf("%nTotal execution time for current run: %d ms%n", end - start);
+		}
+	}
+
+	void generateDynamic()
 	{
 		ExecutorService pool = Executors.newFixedThreadPool(tasksCount);
 			

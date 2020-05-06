@@ -3,7 +3,7 @@ package main;
 import java.util.Calendar;
 import java.util.LinkedList;
 
-public class Task implements Runnable{
+public class Task extends Thread{
 	LinkedList<Subtask> subtasks;
 	String taskName;
 	long start;

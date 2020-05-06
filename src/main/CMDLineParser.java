@@ -12,6 +12,7 @@ public class CMDLineParser {
 	final short defaultGranularity = 2;
 	final String defaultImageName = "zad15.png";
 	final boolean defaultIsQuiet = false;
+	final Balancing defaultBalancingType = Balancing.STATIC;
 	
 	short xPixels;
 	short yPixels;
@@ -27,6 +28,7 @@ public class CMDLineParser {
 	String imageName;
 		
 	boolean isQuiet;
+	Balancing balancingType;
 	
 	Options options;
 	DefaultParser parser;
@@ -47,6 +49,7 @@ public class CMDLineParser {
 		options.addOption("g", "granularity", true, "-g or -granularity");
 		options.addOption("o", "output", true, "-o or -output");
 		options.addOption("q", "quiet", false, "-q or -quiet");
+		options.addOption("d", "dynamic", false, "-d or -dynamic");
 	}
 	
 	private void parseOptions(String[] cmdLineArguments) {
@@ -70,6 +73,7 @@ public class CMDLineParser {
 		
 		imageName = cmdLine.getOptionValue("o", defaultImageName);
 		isQuiet = cmdLine.hasOption("q") ? true : defaultIsQuiet;
+		balancingType = cmdLine.hasOption("d") ? Balancing.DYNAMIC : defaultBalancingType;
 	}
 	
 	private void parseImageSize() {	
@@ -126,5 +130,9 @@ public class CMDLineParser {
 
 	public boolean isQuiet() {
 		return isQuiet;
+	}
+	
+	public Balancing getBalancingType() {
+		return balancingType;
 	}
 }
